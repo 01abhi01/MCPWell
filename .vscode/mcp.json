@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "mcp-well-server": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "mcp_well_server.main"]
+    }
+  }
+}

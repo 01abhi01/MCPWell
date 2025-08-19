@@ -1,0 +1,295 @@
+# Security & Compliance Self-Service Portal Configuration
+# Handles security scanning, compliance auditing, and security policy management
+
+name: "Security & Compliance Portal"
+base_url: "${APIGEE_BASE_URL}/security/v1"
+authentication:
+  type: "bearer_token"
+  header: "Authorization"
+  token: "${SECURITY_PORTAL_TOKEN}"
+
+capabilities:
+  - "vulnerability_scanning"
+  - "compliance_auditing"
+  - "security_policy_management"
+  - "threat_detection"
+  - "access_control_management"
+  - "certificate_management"
+  - "security_reporting"
+
+metadata:
+  portal_type: "security"
+  compliance_frameworks: ["SOX", "PCI-DSS", "HIPAA", "GDPR", "ISO27001", "SOC2"]
+  scan_types: ["static", "dynamic", "dependency", "infrastructure"]
+  
+health_check_endpoint: "/health"
+
+endpoints:
+  # Vulnerability Scanning
+  list_scan_jobs:
+    path: "/scans"
+    method: "GET"
+    parameters:
+      - name: "scan_type"
+        type: "query"
+        required: false
+      - name: "status"
+        type: "query"
+        required: false
+      - name: "target"
+        type: "query"
+        required: false
+
+  create_vulnerability_scan:
+    path: "/scans/vulnerability"
+    method: "POST"
+    requires_confirmation: false
+    parameters:
+      - name: "target"
+        type: "body"
+        required: true
+      - name: "scan_type"
+        type: "body"
+        required: true
+      - name: "severity_threshold"
+        type: "body"
+        required: false
+      - name: "notify_on_completion"
+        type: "body"
+        required: false
+
+  get_scan_results:
+    path: "/scans/{scan_id}/results"
+    method: "GET"
+    parameters:
+      - name: "scan_id"
+        type: "path"
+        required: true
+      - name: "severity_filter"
+        type: "query"
+        required: false
+
+  # Compliance Auditing
+  run_compliance_audit:
+    path: "/compliance/audit"
+    method: "POST"
+    requires_confirmation: false
+    parameters:
+      - name: "framework"
+        type: "body"
+        required: true
+      - name: "scope"
+        type: "body"
+        required: true
+      - name: "environment"
+        type: "body"
+        required: false
+
+  get_compliance_status:
+    path: "/compliance/status"
+    method: "GET"
+    parameters:
+      - name: "framework"
+        type: "query"
+        required: false
+      - name: "resource"
+        type: "query"
+        required: false
+
+  get_compliance_report:
+    path: "/compliance/reports/{report_id}"
+    method: "GET"
+    parameters:
+      - name: "report_id"
+        type: "path"
+        required: true
+
+  # Security Policy Management
+  list_security_policies:
+    path: "/policies"
+    method: "GET"
+    parameters:
+      - name: "category"
+        type: "query"
+        required: false
+      - name: "status"
+        type: "query"
+        required: false
+
+  create_security_policy:
+    path: "/policies"
+    method: "POST"
+    requires_confirmation: true
+    safety_check: true
+    parameters:
+      - name: "name"
+        type: "body"
+        required: true
+      - name: "description"
+        type: "body"
+        required: true
+      - name: "rules"
+        type: "body"
+        required: true
+      - name: "severity"
+        type: "body"
+        required: true
+
+  update_security_policy:
+    path: "/policies/{policy_id}"
+    method: "PUT"
+    requires_confirmation: true
+    parameters:
+      - name: "policy_id"
+        type: "path"
+        required: true
+      - name: "rules"
+        type: "body"
+        required: false
+      - name: "status"
+        type: "body"
+        required: false
+
+  # Access Control Management
+  list_access_controls:
+    path: "/access-controls"
+    method: "GET"
+    parameters:
+      - name: "resource_type"
+        type: "query"
+        required: false
+      - name: "user"
+        type: "query"
+        required: false
+
+  create_access_rule:
+    path: "/access-controls"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "resource"
+        type: "body"
+        required: true
+      - name: "principal"
+        type: "body"
+        required: true
+      - name: "permissions"
+        type: "body"
+        required: true
+      - name: "conditions"
+        type: "body"
+        required: false
+
+  revoke_access:
+    path: "/access-controls/{rule_id}"
+    method: "DELETE"
+    requires_confirmation: true
+    safety_check: true
+    parameters:
+      - name: "rule_id"
+        type: "path"
+        required: true
+
+  # Certificate Management
+  list_certificates:
+    path: "/certificates"
+    method: "GET"
+    parameters:
+      - name: "status"
+        type: "query"
+        required: false
+      - name: "expiry_days"
+        type: "query"
+        required: false
+
+  request_certificate:
+    path: "/certificates/request"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "common_name"
+        type: "body"
+        required: true
+      - name: "san_list"
+        type: "body"
+        required: false
+      - name: "validity_period"
+        type: "body"
+        required: false
+
+  renew_certificate:
+    path: "/certificates/{cert_id}/renew"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "cert_id"
+        type: "path"
+        required: true
+
+  revoke_certificate:
+    path: "/certificates/{cert_id}/revoke"
+    method: "POST"
+    requires_confirmation: true
+    safety_check: true
+    parameters:
+      - name: "cert_id"
+        type: "path"
+        required: true
+      - name: "reason"
+        type: "body"
+        required: true
+
+  # Threat Detection
+  get_threat_alerts:
+    path: "/threats/alerts"
+    method: "GET"
+    parameters:
+      - name: "severity"
+        type: "query"
+        required: false
+      - name: "status"
+        type: "query"
+        required: false
+      - name: "time_range"
+        type: "query"
+        required: false
+
+  investigate_threat:
+    path: "/threats/{threat_id}/investigate"
+    method: "POST"
+    parameters:
+      - name: "threat_id"
+        type: "path"
+        required: true
+      - name: "analysis_type"
+        type: "body"
+        required: false
+
+  # Security Reporting
+  generate_security_report:
+    path: "/reports/generate"
+    method: "POST"
+    parameters:
+      - name: "report_type"
+        type: "body"
+        required: true
+      - name: "scope"
+        type: "body"
+        required: true
+      - name: "time_range"
+        type: "body"
+        required: false
+      - name: "format"
+        type: "body"
+        required: false
+
+  get_security_metrics:
+    path: "/metrics/security"
+    method: "GET"
+    parameters:
+      - name: "metric_type"
+        type: "query"
+        required: false
+      - name: "time_range"
+        type: "query"
+        required: false

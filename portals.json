@@ -1,0 +1,97 @@
+{
+  "database_portal": {
+    "name": "Database Self-Service Portal",
+    "description": "Portal for database operations including backup, restore, compliance, patching, and session management",
+    "base_url": "https://api.example.com/database",
+    "api_version": "v1",
+    "capabilities": [
+      "backup",
+      "restore",
+      "compliance_check",
+      "patching",
+      "session_management",
+      "statistics",
+      "performance_monitoring"
+    ],
+    "authentication": {
+      "type": "api_key",
+      "header": "X-API-Key"
+    },
+    "rate_limits": {
+      "requests_per_minute": 100,
+      "burst_size": 10
+    },
+    "endpoints": {
+      "health": "/health",
+      "capabilities": "/capabilities",
+      "backup": "/operations/backup",
+      "restore": "/operations/restore",
+      "compliance": "/operations/compliance",
+      "patching": "/operations/patching",
+      "sessions": "/operations/sessions",
+      "statistics": "/operations/statistics"
+    }
+  },
+  "metadata_portal": {
+    "name": "Metadata Inventory Portal",
+    "description": "Portal for database metadata, schema discovery, lineage tracking, and configuration management",
+    "base_url": "https://api.example.com/metadata",
+    "api_version": "v1",
+    "capabilities": [
+      "database_metadata",
+      "schema_discovery",
+      "relationship_mapping",
+      "configuration_management",
+      "lineage_tracking",
+      "compliance_metadata"
+    ],
+    "authentication": {
+      "type": "api_key",
+      "header": "X-API-Key"
+    },
+    "rate_limits": {
+      "requests_per_minute": 200,
+      "burst_size": 20
+    },
+    "endpoints": {
+      "health": "/health",
+      "capabilities": "/capabilities",
+      "databases": "/databases",
+      "metadata": "/metadata",
+      "search": "/search",
+      "lineage": "/lineage",
+      "relationships": "/relationships"
+    }
+  },
+  "custom_portal_example": {
+    "name": "Custom Portal Example",
+    "description": "Example configuration for integrating a custom self-service portal",
+    "base_url": "https://api.yourcustomportal.com",
+    "api_version": "v1",
+    "capabilities": [
+      "custom_operation_1",
+      "custom_operation_2",
+      "monitoring",
+      "reporting"
+    ],
+    "authentication": {
+      "type": "oauth2",
+      "token_url": "https://api.yourcustomportal.com/oauth/token",
+      "client_id": "your_client_id",
+      "client_secret": "your_client_secret"
+    },
+    "rate_limits": {
+      "requests_per_minute": 50,
+      "burst_size": 5
+    },
+    "endpoints": {
+      "health": "/health",
+      "capabilities": "/capabilities",
+      "operations": "/operations"
+    },
+    "custom_headers": {
+      "X-Portal-Version": "1.0",
+      "X-Client-Type": "MCP-Well-Server"
+    }
+  }
+}

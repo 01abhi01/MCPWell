@@ -1,0 +1,49 @@
+# Enhanced Database MCP Server Dependencies
+
+# Core MCP Framework
+fastmcp>=0.2.0
+
+# LangChain Framework for AI workflows
+langchain>=0.1.0
+langgraph>=0.0.40
+langchain-community>=0.0.20
+
+# Google Gemini LLM Integration  
+google-generativeai>=0.3.0
+langchain-google-genai>=0.0.8
+
+# Database Connectivity
+asyncpg>=0.29.0          # PostgreSQL async driver
+aiomysql>=0.2.0          # MySQL async driver  
+aiosqlite>=0.19.0        # SQLite async driver
+sqlalchemy>=2.0.0        # ORM with async support
+
+# HTTP Client for Portal Integration
+aiohttp>=3.9.0
+httpx>=0.25.0
+
+# Configuration and Data Processing
+pyyaml>=6.0
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+
+# Monitoring and Logging
+structlog>=23.2.0
+prometheus-client>=0.19.0
+
+# Security and Authentication
+cryptography>=41.0.0
+PyJWT>=2.8.0
+
+# Development and Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.12.0
+black>=23.12.0
+flake8>=6.1.0
+
+# Optional: Advanced Features
+redis>=5.0.0             # For session storage
+celery>=5.3.0            # For background tasks
+spacy>=3.7.0
+transformers>=4.30.0

@@ -1,0 +1,336 @@
+# DevOps Pipeline Self-Service Portal Configuration
+# Handles CI/CD pipelines, deployment management, and release orchestration
+
+name: "DevOps Pipeline Portal"
+base_url: "${APIGEE_BASE_URL}/devops/v1"
+authentication:
+  type: "api_key"
+  header: "X-DevOps-Key"
+  api_key: "${DEVOPS_PORTAL_API_KEY}"
+
+capabilities:
+  - "pipeline_management"
+  - "deployment_orchestration"
+  - "release_management"
+  - "artifact_management"
+  - "environment_promotion"
+  - "rollback_management"
+  - "pipeline_monitoring"
+
+metadata:
+  portal_type: "devops"
+  supported_pipelines: ["jenkins", "gitlab-ci", "github-actions", "azure-devops"]
+  environments: ["dev", "test", "staging", "prod"]
+  deployment_strategies: ["blue-green", "canary", "rolling", "recreate"]
+  
+health_check_endpoint: "/status"
+
+endpoints:
+  # Pipeline Management
+  list_pipelines:
+    path: "/pipelines"
+    method: "GET"
+    parameters:
+      - name: "status"
+        type: "query"
+        required: false
+      - name: "project"
+        type: "query"
+        required: false
+
+  create_pipeline:
+    path: "/pipelines"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "name"
+        type: "body"
+        required: true
+      - name: "repository"
+        type: "body"
+        required: true
+      - name: "stages"
+        type: "body"
+        required: true
+      - name: "triggers"
+        type: "body"
+        required: false
+
+  trigger_pipeline:
+    path: "/pipelines/{pipeline_id}/trigger"
+    method: "POST"
+    requires_confirmation: false
+    parameters:
+      - name: "pipeline_id"
+        type: "path"
+        required: true
+      - name: "branch"
+        type: "body"
+        required: false
+      - name: "parameters"
+        type: "body"
+        required: false
+
+  get_pipeline_status:
+    path: "/pipelines/{pipeline_id}/status"
+    method: "GET"
+    parameters:
+      - name: "pipeline_id"
+        type: "path"
+        required: true
+
+  get_pipeline_logs:
+    path: "/pipelines/{pipeline_id}/logs"
+    method: "GET"
+    parameters:
+      - name: "pipeline_id"
+        type: "path"
+        required: true
+      - name: "stage"
+        type: "query"
+        required: false
+
+  stop_pipeline:
+    path: "/pipelines/{pipeline_id}/stop"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "pipeline_id"
+        type: "path"
+        required: true
+
+  # Deployment Management
+  list_deployments:
+    path: "/deployments"
+    method: "GET"
+    parameters:
+      - name: "environment"
+        type: "query"
+        required: false
+      - name: "status"
+        type: "query"
+        required: false
+      - name: "application"
+        type: "query"
+        required: false
+
+  create_deployment:
+    path: "/deployments"
+    method: "POST"
+    requires_confirmation: true
+    safety_check: true
+    parameters:
+      - name: "application"
+        type: "body"
+        required: true
+      - name: "version"
+        type: "body"
+        required: true
+      - name: "environment"
+        type: "body"
+        required: true
+      - name: "strategy"
+        type: "body"
+        required: false
+      - name: "config_overrides"
+        type: "body"
+        required: false
+
+  get_deployment_status:
+    path: "/deployments/{deployment_id}"
+    method: "GET"
+    parameters:
+      - name: "deployment_id"
+        type: "path"
+        required: true
+
+  rollback_deployment:
+    path: "/deployments/{deployment_id}/rollback"
+    method: "POST"
+    requires_confirmation: true
+    safety_check: true
+    parameters:
+      - name: "deployment_id"
+        type: "path"
+        required: true
+      - name: "target_version"
+        type: "body"
+        required: false
+
+  # Environment Promotion
+  promote_to_environment:
+    path: "/promotions"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "application"
+        type: "body"
+        required: true
+      - name: "source_environment"
+        type: "body"
+        required: true
+      - name: "target_environment"
+        type: "body"
+        required: true
+      - name: "version"
+        type: "body"
+        required: false
+
+  get_promotion_status:
+    path: "/promotions/{promotion_id}"
+    method: "GET"
+    parameters:
+      - name: "promotion_id"
+        type: "path"
+        required: true
+
+  # Release Management
+  list_releases:
+    path: "/releases"
+    method: "GET"
+    parameters:
+      - name: "status"
+        type: "query"
+        required: false
+      - name: "application"
+        type: "query"
+        required: false
+
+  create_release:
+    path: "/releases"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "name"
+        type: "body"
+        required: true
+      - name: "version"
+        type: "body"
+        required: true
+      - name: "applications"
+        type: "body"
+        required: true
+      - name: "release_notes"
+        type: "body"
+        required: false
+
+  execute_release:
+    path: "/releases/{release_id}/execute"
+    method: "POST"
+    requires_confirmation: true
+    safety_check: true
+    parameters:
+      - name: "release_id"
+        type: "path"
+        required: true
+      - name: "environment"
+        type: "body"
+        required: true
+
+  # Artifact Management
+  list_artifacts:
+    path: "/artifacts"
+    method: "GET"
+    parameters:
+      - name: "application"
+        type: "query"
+        required: false
+      - name: "version"
+        type: "query"
+        required: false
+      - name: "type"
+        type: "query"
+        required: false
+
+  upload_artifact:
+    path: "/artifacts"
+    method: "POST"
+    parameters:
+      - name: "application"
+        type: "body"
+        required: true
+      - name: "version"
+        type: "body"
+        required: true
+      - name: "type"
+        type: "body"
+        required: true
+      - name: "metadata"
+        type: "body"
+        required: false
+
+  get_artifact_info:
+    path: "/artifacts/{artifact_id}"
+    method: "GET"
+    parameters:
+      - name: "artifact_id"
+        type: "path"
+        required: true
+
+  # Environment Management
+  list_environments:
+    path: "/environments"
+    method: "GET"
+
+  get_environment_status:
+    path: "/environments/{environment}/status"
+    method: "GET"
+    parameters:
+      - name: "environment"
+        type: "path"
+        required: true
+
+  refresh_environment:
+    path: "/environments/{environment}/refresh"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "environment"
+        type: "path"
+        required: true
+      - name: "source_environment"
+        type: "body"
+        required: false
+
+  # Monitoring and Metrics
+  get_pipeline_metrics:
+    path: "/metrics/pipelines"
+    method: "GET"
+    parameters:
+      - name: "time_range"
+        type: "query"
+        required: false
+      - name: "project"
+        type: "query"
+        required: false
+
+  get_deployment_metrics:
+    path: "/metrics/deployments"
+    method: "GET"
+    parameters:
+      - name: "time_range"
+        type: "query"
+        required: false
+      - name: "environment"
+        type: "query"
+        required: false
+
+  # Quality Gates
+  list_quality_gates:
+    path: "/quality-gates"
+    method: "GET"
+    parameters:
+      - name: "environment"
+        type: "query"
+        required: false
+
+  execute_quality_gate:
+    path: "/quality-gates/{gate_id}/execute"
+    method: "POST"
+    parameters:
+      - name: "gate_id"
+        type: "path"
+        required: true
+      - name: "target"
+        type: "body"
+        required: true

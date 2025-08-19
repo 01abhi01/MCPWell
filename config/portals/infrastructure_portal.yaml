@@ -1,0 +1,227 @@
+# Infrastructure Self-Service Portal Configuration
+# Handles VM management, container orchestration, and infrastructure provisioning
+
+name: "Infrastructure Self-Service Portal"
+base_url: "${APIGEE_BASE_URL}/infrastructure/v1"
+authentication:
+  type: "api_key"
+  header: "X-API-Key"
+  api_key: "${INFRA_PORTAL_API_KEY}"
+
+capabilities:
+  - "vm_management"
+  - "container_orchestration"
+  - "load_balancer_management"
+  - "network_configuration"
+  - "storage_management"
+  - "infrastructure_monitoring"
+  - "cost_optimization"
+
+metadata:
+  portal_type: "infrastructure"
+  supported_clouds: ["aws", "azure", "gcp"]
+  regions: ["us-east-1", "us-west-2", "eu-west-1"]
+  
+health_check_endpoint: "/health"
+
+endpoints:
+  # VM Management
+  list_vms:
+    path: "/vms"
+    method: "GET"
+    parameters:
+      - name: "environment"
+        type: "query"
+        required: false
+      - name: "status"
+        type: "query"
+        required: false
+
+  create_vm:
+    path: "/vms"
+    method: "POST"
+    requires_confirmation: true
+    safety_check: true
+    parameters:
+      - name: "instance_type"
+        type: "body"
+        required: true
+      - name: "image_id"
+        type: "body"
+        required: true
+      - name: "environment"
+        type: "body"
+        required: true
+      - name: "tags"
+        type: "body"
+        required: false
+
+  scale_vm:
+    path: "/vms/{vm_id}/scale"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "vm_id"
+        type: "path"
+        required: true
+      - name: "instance_type"
+        type: "body"
+        required: true
+
+  stop_vm:
+    path: "/vms/{vm_id}/stop"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "vm_id"
+        type: "path"
+        required: true
+
+  start_vm:
+    path: "/vms/{vm_id}/start"
+    method: "POST"
+    parameters:
+      - name: "vm_id"
+        type: "path"
+        required: true
+
+  terminate_vm:
+    path: "/vms/{vm_id}"
+    method: "DELETE"
+    requires_confirmation: true
+    safety_check: true
+    parameters:
+      - name: "vm_id"
+        type: "path"
+        required: true
+
+  # Container Management
+  list_containers:
+    path: "/containers"
+    method: "GET"
+    parameters:
+      - name: "namespace"
+        type: "query"
+        required: false
+      - name: "status"
+        type: "query"
+        required: false
+
+  deploy_container:
+    path: "/containers/deploy"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "image"
+        type: "body"
+        required: true
+      - name: "namespace"
+        type: "body"
+        required: true
+      - name: "replicas"
+        type: "body"
+        required: false
+      - name: "resources"
+        type: "body"
+        required: false
+
+  scale_container:
+    path: "/containers/{container_id}/scale"
+    method: "POST"
+    parameters:
+      - name: "container_id"
+        type: "path"
+        required: true
+      - name: "replicas"
+        type: "body"
+        required: true
+
+  # Load Balancer Management
+  list_load_balancers:
+    path: "/load-balancers"
+    method: "GET"
+
+  create_load_balancer:
+    path: "/load-balancers"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "name"
+        type: "body"
+        required: true
+      - name: "type"
+        type: "body"
+        required: true
+      - name: "targets"
+        type: "body"
+        required: true
+
+  # Monitoring and Metrics
+  get_infrastructure_metrics:
+    path: "/metrics"
+    method: "GET"
+    parameters:
+      - name: "resource_type"
+        type: "query"
+        required: false
+      - name: "time_range"
+        type: "query"
+        required: false
+      - name: "metric_type"
+        type: "query"
+        required: false
+
+  get_cost_analysis:
+    path: "/cost-analysis"
+    method: "GET"
+    parameters:
+      - name: "time_range"
+        type: "query"
+        required: false
+      - name: "group_by"
+        type: "query"
+        required: false
+
+  # Network Management
+  list_networks:
+    path: "/networks"
+    method: "GET"
+
+  create_network:
+    path: "/networks"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "name"
+        type: "body"
+        required: true
+      - name: "cidr"
+        type: "body"
+        required: true
+      - name: "environment"
+        type: "body"
+        required: true
+
+  # Storage Management
+  list_storage:
+    path: "/storage"
+    method: "GET"
+    parameters:
+      - name: "type"
+        type: "query"
+        required: false
+
+  create_storage:
+    path: "/storage"
+    method: "POST"
+    requires_confirmation: true
+    parameters:
+      - name: "type"
+        type: "body"
+        required: true
+      - name: "size"
+        type: "body"
+        required: true
+      - name: "environment"
+        type: "body"
+        required: true
