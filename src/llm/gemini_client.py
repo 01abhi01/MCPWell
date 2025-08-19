@@ -21,10 +21,22 @@ class EnhancedGeminiClient:
     def __init__(self, api_key: str, model_name: str = "gemini-1.5-pro"):
         self.api_key = api_key
         self.model_name = model_name
+        self.mock_mode = False
         
-        # Configure Gemini
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel(model_name)
+        # Check if API key is valid (not a placeholder)
+        if not api_key or api_key in ["your_gemini_api_key_here", "test_google_api_key_placeholder"]:
+            logger.warning("⚠️ Gemini API key not configured, running in mock mode")
+            self.mock_mode = True
+            self.model = None
+        else:
+            try:
+                # Configure Gemini
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel(model_name)
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to initialize Gemini client: {e}. Running in mock mode")
+                self.mock_mode = True
+                self.model = None
         
         # Safety settings for database operations
         self.safety_settings = [
@@ -95,6 +107,11 @@ Provide data-driven insights and actionable recommendations."""
         Generate AI response with specialized database expertise
         """
         try:
+            # Return mock response if in mock mode
+            if self.mock_mode:
+                logger.info("🤖 Mock mode: Generating placeholder response")
+                return f"Mock response for: {prompt[:50]}... (Gemini API not configured)"
+            
             # Prepare system prompt
             system_prompt = self.system_prompts.get(expert_mode, self.system_prompts["database_expert"])
             
@@ -619,3 +636,137 @@ Provide data-driven insights and actionable recommendations."""
     async def _handle_unknown_request(self, request: Dict[str, Any]) -> str:
         """Handle unknown request types"""
         return f"Unknown request type: {request.get('type', 'undefined')}"
+    
+    # =============================================================================
+    # SSP-SPECIFIC METHODS FOR UNIFIED RESPONSE
+    # =============================================================================
+    
+    async def analyze_inventory_metadata(self, inventory_data: Dict[str, Any]) -> str:
+        """
+        Analyze inventory metadata specifically for SSP operations
+        Generate insights from SSP API inventory responses
+        """
+        try:
+            prompt = f"""
+            Analyze this database inventory metadata from SSP API responses and provide insights:
+            
+            Inventory Data:
+            {inventory_data}
+            
+            Please provide:
+            1. Resource distribution analysis
+            2. Health status trends
+            3. Potential optimization opportunities
+            4. Risk assessments
+            5. Recommendations for SSP portal configurations
+            
+            Focus on actionable insights for SSP portal management.
+            """
+            
+            result = await self.generate_response(prompt)
+            logger.info("🤖 Generated SSP inventory metadata analysis")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Error analyzing inventory metadata: {e}")
+            return f"Error analyzing inventory metadata: {str(e)}"
+    
+    async def generate_unified_analysis(self, operation_summary: Dict[str, Any], 
+                                      session_context: Dict[str, Any], 
+                                      response_type: str) -> str:
+        """
+        Generate unified analysis combining multiple SSP operations
+        Provides consolidated insights across SSP API interactions
+        """
+        try:
+            prompt = f"""
+            Generate a unified {response_type} analysis based on these SSP portal operations:
+            
+            Operation Summary:
+            {operation_summary}
+            
+            Session Context:
+            {session_context}
+            
+            Response Type: {response_type}
+            
+            Please provide:
+            1. Overall operation assessment
+            2. Cross-operation insights and patterns
+            3. Performance and efficiency analysis
+            4. Recommendations for future operations
+            5. SSP portal optimization suggestions
+            
+            Format the response for {response_type} presentation with clear sections and actionable insights.
+            """
+            
+            result = await self.generate_response(prompt)
+            logger.info(f"🤖 Generated unified {response_type} analysis")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Error generating unified analysis: {e}")
+            return f"Error generating unified analysis: {str(e)}"
+    
+    async def create_ssp_workflow_recommendations(self, operation_history: List[Dict[str, Any]], 
+                                                session_context: Dict[str, Any]) -> str:
+        """
+        Create workflow recommendations based on SSP operation patterns
+        Suggest optimized workflows for recurring SSP operations
+        """
+        try:
+            prompt = f"""
+            Based on these SSP portal operation patterns, suggest optimized workflows:
+            
+            Operation History:
+            {operation_history}
+            
+            Session Context:
+            {session_context}
+            
+            Please provide:
+            1. Workflow automation opportunities
+            2. SSP API call optimization patterns
+            3. Recommended operation sequences
+            4. Error handling and retry strategies
+            5. Performance improvement suggestions
+            
+            Focus on practical SSP portal workflow improvements.
+            """
+            
+            result = await self.generate_response(prompt)
+            logger.info("🤖 Generated SSP workflow recommendations")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Error creating workflow recommendations: {e}")
+            return f"Error creating workflow recommendations: {str(e)}"
+    
+    async def assess_ssp_operation_efficiency(self, operation_metrics: Dict[str, Any]) -> str:
+        """
+        Assess efficiency of SSP operations and suggest improvements
+        """
+        try:
+            prompt = f"""
+            Assess the efficiency of these SSP portal operations and suggest improvements:
+            
+            Operation Metrics:
+            {operation_metrics}
+            
+            Please analyze:
+            1. Response time patterns
+            2. Error rates and types
+            3. Resource utilization
+            4. API endpoint performance
+            5. Optimization opportunities
+            
+            Provide specific recommendations for improving SSP portal operations.
+            """
+            
+            result = await self.generate_response(prompt)
+            logger.info("🤖 Generated SSP operation efficiency assessment")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Error assessing operation efficiency: {e}")
+            return f"Error assessing operation efficiency: {str(e)}"

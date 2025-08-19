@@ -108,84 +108,120 @@ class MCPServerWithYAMLTools:
             print(f"• {tool.name}")
         
         # Demonstrate tool execution
-        print(f"\n🧪 Tool Execution Demonstrations:")
+        print(f"\n🧪 SSP Tool Execution Demonstrations:")
         print("-" * 50)
         
-        # Test 1: Natural Language Processing
-        print("\n1. 🧠 Natural Language Processing:")
-        nlp_result = await self.execute_tool("process_database_request", {
-            "user_input": "Show me all production databases with performance issues",
+        # Test 1: SSP Portal Interaction - Natural Language
+        print("\n1. 🔌 SSP Portal Interaction (Natural Language):")
+        ssp_result = await self.execute_tool("ssp_portal_interaction", {
+            "operation_type": "natural_language_request",
+            "parameters": {
+                "user_input": "Show me all production databases with performance issues"
+            },
             "session_id": "demo_session_1"
         })
-        print(f"   Result: {nlp_result[0].text[:100]}..." if nlp_result and hasattr(nlp_result[0], 'text') else nlp_result)
+        print(f"   Result: {ssp_result[0].text[:100]}..." if ssp_result and hasattr(ssp_result[0], 'text') else ssp_result)
         
-        # Test 2: Workflow Orchestration
-        print("\n2. 🔄 Workflow Orchestration:")
-        workflow_result = await self.execute_tool("execute_multi_step_workflow", {
-            "workflow_description": "backup production databases and analyze performance",
-            "databases": ["users_db", "orders_db"],
-            "dry_run": True
+        # Test 2: SSP Portal Interaction - API Call
+        print("\n2. � SSP Portal Interaction (API Call):")
+        api_result = await self.execute_tool("ssp_portal_interaction", {
+            "operation_type": "api_call",
+            "endpoint": "/api/v1/databases/list",
+            "request_method": "GET",
+            "parameters": {
+                "filters": {
+                    "environment": "production"
+                }
+            }
         })
-        print(f"   Result: {workflow_result[0].text[:100]}..." if workflow_result and hasattr(workflow_result[0], 'text') else workflow_result)
+        print(f"   Result: {api_result[0].text[:100]}..." if api_result and hasattr(api_result[0], 'text') else api_result)
         
-        # Test 3: Database Inventory
-        print("\n3. 📊 Database Inventory:")
-        inventory_result = await self.execute_tool("get_database_inventory", {
-            "environment_filter": "production",
+        # Test 3: Inventory Metadata Interaction
+        print("\n3. 📊 Inventory Metadata Interaction:")
+        inventory_result = await self.execute_tool("inventory_metadata_interaction", {
+            "inventory_action": "list",
+            "resource_types": ["databases"],
+            "filters": {
+                "environment": "production",
+                "health_status": "critical"
+            },
             "ai_insights": True
         })
         print(f"   Result: {inventory_result[0].text[:100]}..." if inventory_result and hasattr(inventory_result[0], 'text') else inventory_result)
         
-        # Test 4: Safety Confirmation
-        print("\n4. 🛡️ Safety Confirmation:")
-        safety_result = await self.execute_tool("confirm_operation", {
-            "operation_type": "delete",
-            "target_resources": ["temp_analytics_table"],
-            "impact_assessment": {
-                "risk_level": "medium",
-                "affected_records": 50000,
-                "rollback_available": False
+        # Test 4: Unified Response - Analysis
+        print("\n4. 🎯 Unified Response (Analysis):")
+        unified_result = await self.execute_tool("unified_response", {
+            "response_type": "analysis",
+            "session_id": "demo_session_1",
+            "include_recommendations": True,
+            "aggregation_options": {
+                "time_window": "session_only",
+                "include_metrics": True
             }
         })
-        print(f"   Result: {safety_result[0].text[:100]}..." if safety_result and hasattr(safety_result[0], 'text') else safety_result)
+        print(f"   Result: {unified_result[0].text[:100]}..." if unified_result and hasattr(unified_result[0], 'text') else unified_result)
         
-        # Test 5: Performance Analysis
-        print("\n5. ⚡ Performance Analysis:")
-        perf_result = await self.execute_tool("analyze_database_performance", {
-            "database_names": ["production_users", "production_orders"],
-            "analysis_type": "comprehensive",
-            "ai_recommendations": True
+        # Test 5: Unified Response - Workflow Plan
+        print("\n5. 🎯 Unified Response (Workflow Plan):")
+        workflow_result = await self.execute_tool("unified_response", {
+            "response_type": "workflow_plan",
+            "context_operations": ["database_query", "performance_analysis"],
+            "include_workflow_suggestions": True
         })
-        print(f"   Result: {perf_result[0].text[:100]}..." if perf_result and hasattr(perf_result[0], 'text') else perf_result)
+        print(f"   Result: {workflow_result[0].text[:100]}..." if workflow_result and hasattr(workflow_result[0], 'text') else workflow_result)
         
-        print(f"\n✅ YAML Tool Definitions Demo Completed Successfully!")
+        print(f"\n✅ SSP Tool Definitions Demo Completed Successfully!")
         print("=" * 70)
         
-        # Show YAML configuration summary
-        print(f"\n📋 YAML Configuration Summary:")
+        # Show SSP YAML configuration summary
+        print(f"\n📋 SSP YAML Configuration Summary:")
         tools_config = self.config_manager.get_tools_config()
         metadata = tools_config.get("metadata", {})
         print(f"   Name: {metadata.get('name', 'N/A')}")
         print(f"   Version: {metadata.get('version', 'N/A')}")
         print(f"   Description: {metadata.get('description', 'N/A')}")
-        print(f"   Tools Defined: {len(tools_config.get('tools', {}))}")
+        print(f"   Architecture: {metadata.get('architecture', 'N/A')}")
+        print(f"   SSP Tools Defined: {len(tools_config.get('tools', {}))}")
         print(f"   Tool Categories: {len(tools_config.get('tool_settings', {}).get('categories', {}))}")
+        
+        # SSP Architecture highlights
+        integration = tools_config.get("integration", {})
+        if integration.get("ssp_primary_mode"):
+            print(f"\n🔌 SSP-First Architecture:")
+            print(f"   - All operations via SSP API endpoints")
+            print(f"   - LangChain/LangGraph integration: {integration.get('langgraph_workflows', False)}")
+            print(f"   - Gemini LLM enhanced: {integration.get('gemini_llm', False)}")
+            print(f"   - Portal manager active: {integration.get('portal_manager', False)}")
+
+    async def cleanup(self):
+        """Cleanup server resources"""
+        try:
+            if self.enhanced_tools and self.enhanced_tools.portal_manager:
+                await self.enhanced_tools.portal_manager.cleanup()
+            logger.info("✅ MCP Server cleanup completed")
+        except Exception as e:
+            logger.error(f"❌ MCP Server cleanup failed: {e}")
 
 async def main():
-    """Main function to demonstrate YAML tool definitions"""
+    """Main function to demonstrate SSP YAML tool definitions"""
     
-    print("🔧 Enhanced Database MCP Server - YAML Tool Definitions")
-    print("Demonstrates LangChain/LangGraph framework with YAML-based tool configuration")
+    print("🔧 Enhanced Database MCP Server - SSP YAML Tool Definitions")
+    print("Demonstrates LangChain/LangGraph framework with SSP-first YAML-based tool configuration")
     print()
     
     # Initialize server
     server = MCPServerWithYAMLTools()
     
-    if await server.initialize():
-        # Run demonstration
-        await server.demonstrate_yaml_tools()
-    else:
-        print("❌ Failed to initialize MCP server")
+    try:
+        if await server.initialize():
+            # Run demonstration
+            await server.demonstrate_yaml_tools()
+        else:
+            print("❌ Failed to initialize MCP server")
+    finally:
+        # Cleanup resources
+        await server.cleanup()
 
 if __name__ == "__main__":
     asyncio.run(main())

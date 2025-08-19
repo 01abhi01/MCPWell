@@ -1,96 +1,77 @@
-# Enhanced Database MCP Server - YAML Tool Definitions
+# Enhanced Database MCP Server - SSP-First Architecture
 
-A sophisticated MCP (Model Context Protocol) server that combines the power of **LangChain/LangGraph AI frameworks** with **YAML-based tool definitions**. This approach provides the best of both worlds: advanced AI capabilities with simplified configuration management.
+A sophisticated MCP (Model Context Protocol) server with a **simplified 3-tool SSP-first architecture**. All operations flow through **SSP API endpoints only**, providing unified database operations with advanced AI capabilities and streamlined tool management.
 
 ## 🚀 Key Features
 
-### 🎯 **YAML Tool Definitions + LangChain Framework**
-- **Tool definitions in YAML**: All 8 MCP tools defined in `tools_config.yaml` for easy management
-- **LangChain/LangGraph implementation**: Full AI-powered workflow orchestration and intent classification
-- **Sophisticated AI capabilities**: Gemini LLM integration, conversation management, safety validation
-- **No code changes for new tools**: Add tools by editing YAML configuration only
+### 🎯 **3-Tool SSP Architecture**
+- **SSP Portal Interaction**: Primary tool for all SSP API operations including natural language processing
+- **Inventory Metadata Interaction**: Database and resource inventory management via SSP APIs
+- **Unified Response**: Consolidated response aggregation with AI-powered insights
+- **All operations via SSP APIs**: Every operation flows through SSP endpoints exclusively
 
 ### 🤖 **Advanced AI Components**
-- **Intent Classification**: Hybrid rule-based + LLM-powered intent recognition (13 intent types)
-- **Conversation Flow Management**: Multi-turn interactions with LangChain memory
-- **Workflow Orchestration**: LangGraph state machines for complex operations
+- **Intent Classification**: AI-powered intent recognition with SSP endpoint mapping
+- **Conversation Flow Management**: Multi-turn interactions with session tracking
+- **Workflow Orchestration**: LangGraph state machines for complex SSP operations
 - **Safety Validation**: AI-powered confirmation for destructive operations
-- **Performance Analysis**: Predictive insights and optimization recommendations
+- **Unified Analysis**: Cross-operation insights and performance optimization
 
-### 🔌 **Multi-Portal Integration**
-- **Dynamic Portal Registration**: Add new portals without code changes
-- **Health Monitoring**: Automatic portal availability monitoring
-- **Capability Discovery**: AI-driven portal integration with automatic intent generation
-- **Authentication Support**: Multiple auth methods (API key, OAuth2, Bearer token, mTLS)
+### 🔌 **SSP-First Integration**
+- **Pure SSP API Operations**: All database operations through SSP endpoints
+- **Dynamic Endpoint Discovery**: Automatic SSP API capability detection
+- **Health Monitoring**: SSP portal availability and performance monitoring
+- **Authentication Support**: Bearer token, API key, OAuth2 for SSP portals
 
 ## 📁 Project Structure
 
 ```
 MCP_Well/
-├── tools_config.yaml           # 📋 YAML tool definitions (NEW!)
-├── mcp_server.py              # 🔧 Main server with YAML tool loading
-├── src/                       # 🧠 Full LangChain/LangGraph implementation
+├── tools_config.yaml           # 📋 3 SSP tools configuration
+├── mcp_server.py              # 🔧 Main server with SSP-first architecture
+├── src/                       # 🧠 SSP-focused implementation
 │   ├── mcp/
-│   │   └── enhanced_tools.py   # MCP tools with YAML configuration support
+│   │   └── enhanced_tools.py   # 3 core SSP tools only
 │   ├── nlp/
-│   │   └── intent_classifier.py # AI-powered intent classification
+│   │   └── intent_classifier.py # Intent→SSP endpoint mapping
 │   ├── workflows/
-│   │   └── database_workflow.py # LangGraph workflow orchestration
+│   │   └── database_workflow.py # SSP workflow orchestration
 │   ├── llm/
-│   │   └── gemini_client.py    # Enhanced Gemini LLM integration
+│   │   └── gemini_client.py    # Enhanced Gemini with SSP analysis
 │   ├── portals/
-│   │   └── portal_manager.py   # Multi-portal management
+│   │   └── portal_manager.py   # SSP portal management
 │   └── config/
-│       └── config_manager.py   # Configuration with YAML support
-├── requirements.txt           # Full dependencies (LangChain, LangGraph, etc.)
+│       └── config_manager.py   # SSP configuration management
+├── requirements.txt           # Dependencies optimized for SSP operations
 ├── README.md                 # This documentation
-├── .env.example              # Environment variables
+├── .env.example              # SSP environment variables
 └── .gitignore               # Git ignore rules
 ```
 
-## 🛠️ **8 MCP Tools Defined in YAML**
+## 🛠️ **3 Core SSP Tools**
 
-All tools are defined in `tools_config.yaml` but implemented with full LangChain/LangGraph capabilities:
+All tools are focused on SSP API operations with advanced AI capabilities:
 
-### 1. 🧠 **process_database_request**
-- **Natural Language Processing**: AI-powered intent classification
-- **Conversation Management**: Multi-turn interactions with context
-- **13 Intent Types**: CREATE, READ, UPDATE, DELETE, BACKUP, RESTORE, ANALYZE, OPTIMIZE, MONITOR, TROUBLESHOOT, COMPLIANCE, MIGRATION, ADMINISTRATION
+### 1. 🔌 **ssp_portal_interaction**
+- **Primary SSP Interface**: All database operations through SSP API endpoints
+- **Natural Language Processing**: Convert user requests to SSP API calls
+- **Intent→Endpoint Mapping**: Automatic mapping of user intents to SSP endpoints
+- **Session Management**: Track SSP operations across conversation sessions
+- **Operation Types**: `natural_language_request`, `api_call`, `workflow_execution`, `performance_analysis`, `backup_operation`, `query_execution`
 
-### 2. 🔄 **execute_multi_step_workflow**  
-- **LangGraph Orchestration**: State machine-based workflow execution
-- **Dependency Management**: Automatic step dependency resolution
-- **Error Recovery**: Intelligent rollback and error handling
+### 2. 📊 **inventory_metadata_interaction**  
+- **SSP Inventory Management**: Database and resource inventory via SSP APIs only
+- **Metadata Operations**: `list`, `detail`, `search`, `health_check`, `metadata_fetch`, `schema_analyze`
+- **Multi-Resource Support**: Databases, tables, schemas, indexes, views, procedures
+- **AI Insights**: Optional Gemini-powered analysis of inventory data
+- **Health Status Monitoring**: Real-time status via SSP health endpoints
 
-### 3. 📊 **get_database_inventory**
-- **Multi-Portal Data**: Aggregated inventory from all portals
-- **AI Insights**: Gemini-powered analysis and recommendations
-- **Health Monitoring**: Real-time status and alerts
-
-### 4. 🛡️ **confirm_operation**
-- **AI Safety Validation**: Risk assessment for destructive operations
-- **Interactive Confirmation**: Context-aware confirmation workflows
-- **Impact Assessment**: Automatic risk level calculation
-
-### 5. ⚡ **analyze_database_performance**
-- **Predictive Analysis**: AI-powered performance insights
-- **Multi-Metric Collection**: CPU, memory, query performance, connections
-- **Optimization Recommendations**: Gemini-generated suggestions
-
-### 6. 🔌 **manage_portal_integration**
-- **Dynamic Registration**: Add portals without code changes
-- **Capability Discovery**: Automatic portal integration
-- **Health Monitoring**: Continuous availability checks
-
-### 7. 📋 **get_compliance_report**
-- **Multi-Framework Support**: SOX, GDPR, HIPAA, PCI DSS, SOC2, ISO27001
-- **Cross-Portal Auditing**: Compliance across all integrated portals
-- **AI Risk Assessment**: Automated compliance risk analysis
-
-### 8. 💬 **orchestrate_conversation_flow**
-- **LangChain Memory**: Conversation buffer with context management
-- **State Management**: Track pending operations and user intent
-- **Clarification Handling**: Automatic clarification for ambiguous requests
+### 3. 🎯 **unified_response**
+- **Response Aggregation**: Consolidate multiple SSP operations into unified insights
+- **AI-Powered Analysis**: Cross-operation patterns and optimization suggestions
+- **Workflow Recommendations**: Suggest SSP workflow improvements based on usage patterns
+- **Session Analytics**: Track and analyze SSP operation efficiency
+- **Response Types**: `summary`, `detailed`, `analysis`, `recommendations`, `workflow_plan`
 
 ## ⚡ Quick Start
 
@@ -99,55 +80,55 @@ All tools are defined in `tools_config.yaml` but implemented with full LangChain
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
+### 2. Configure SSP Environment
 ```bash
 cp .env.example .env
-# Edit .env with your Gemini API key and portal credentials
+# Edit .env with your SSP portal URLs, API tokens, and Gemini API key
 ```
 
-### 3. Run the MCP Server
+### 3. Configure SSP Endpoints
+```bash
+# Edit tools_config.yaml to match your SSP portal configuration
+# Update base_url, authentication, and endpoint mappings
+```
+
+### 4. Run the SSP MCP Server
 ```bash
 python mcp_server.py
 ```
 
-### 4. See YAML Tools in Action
-The server demonstrates all 8 tools loaded from YAML configuration with full AI capabilities.
+### 5. See SSP Tools in Action
+The server provides 3 tools that handle all operations through SSP API endpoints.
 
-## 🔧 YAML Tool Configuration
+## 🔧 SSP Tool Configuration
 
-### Tool Definition Structure
+### SSP Portal Integration
 ```yaml
-tools:
-  your_tool_name:
-    name: "your_tool_name"
-    description: "Tool description"
-    category: "tool_category" 
-    requires_confirmation: false
-    implementation_class: "EnhancedMCPTools"
-    implementation_method: "your_method_name"
-    input_schema:
-      type: "object"
-      properties:
-        parameter_name:
-          type: "string"
-          description: "Parameter description"
-      required: ["parameter_name"]
-    examples:
-      - input: "example input"
-        description: "What this example demonstrates"
+integration:
+  ssp_primary_mode: true
+  ssp_endpoints:
+    base_url: "${SSP_BASE_URL}"
+    api_version: "v1"
+    authentication:
+      type: "bearer_token"
+      token: "${SSP_API_TOKEN}"
+    core_endpoints:
+      databases: "/api/v1/databases"
+      operations: "/api/v1/operations"
+      analytics: "/api/v1/analytics"
+      metadata: "/api/v1/metadata"
+      health: "/api/v1/health"
 ```
 
-### Adding a New Tool
+### Tool Categories
+- **ssp_operations**: Primary SSP portal operations and natural language processing
+- **ssp_inventory**: Inventory and metadata operations via SSP APIs  
+- **ssp_aggregation**: Unified response aggregation and AI insights
 
-1. **Edit `tools_config.yaml`** - Add your tool definition
-2. **Implement Method** - Add method to `EnhancedMCPTools` class
-3. **Test** - Run `python mcp_server.py` to see your tool in action
+## 🧪 Example SSP Usage
 
-No other code changes required!
-
-## 🧪 Example Usage
-
-### Natural Language Processing
+### Natural Language to SSP API
+````
 ```python
 await server.execute_tool("process_database_request", {
     "user_input": "Show me all production databases with performance issues",

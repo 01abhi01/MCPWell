@@ -1,6 +1,6 @@
 """
-Complete Example: Adding a Custom Analytics Portal
-Demonstrates the full workflow of integrating a new self-service portal
+Complete Example: Adding a Custom Analytics Portal via SSP
+Demonstrates the SSP-first workflow of integrating a new self-service portal
 """
 
 import asyncio
@@ -8,26 +8,24 @@ import logging
 from typing import Dict, Any
 from src.config.config_manager import ConfigManager
 from src.portals.portal_manager import PortalManager
-from src.integration.portal_integration_framework import PortalIntegrationFramework
 from src.mcp.enhanced_tools import EnhancedMCPTools
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class AnalyticsPortalIntegrationExample:
-    """Complete example of integrating a custom analytics portal"""
+class AnalyticsPortalSSPIntegrationExample:
+    """Complete example of integrating a custom analytics portal via SSP"""
     
     def __init__(self):
         self.config_manager = ConfigManager()
         self.portal_manager = PortalManager(self.config_manager)
-        self.integration_framework = PortalIntegrationFramework(self.portal_manager)
         self.enhanced_tools = EnhancedMCPTools(self.config_manager)
     
-    async def run_complete_integration_example(self):
-        """Run the complete portal integration workflow"""
+    async def run_complete_ssp_integration_example(self):
+        """Run the complete SSP portal integration workflow"""
         
-        print("🚀 Starting Complete Portal Integration Example")
+        print("🚀 Starting Complete SSP Portal Integration Example")
         print("=" * 60)
         
         # Step 1: Create portal configuration programmatically
@@ -423,8 +421,8 @@ Workflow orchestration is ready for complex multi-step operations.
 async def main():
     """Run the complete integration example"""
     try:
-        example = AnalyticsPortalIntegrationExample()
-        await example.run_complete_integration_example()
+        example = AnalyticsPortalSSPIntegrationExample()
+        await example.run_complete_ssp_integration_example()
     except Exception as e:
         print(f"❌ Integration example failed: {e}")
         import traceback

@@ -217,10 +217,10 @@ tools:
 
 tool_settings:
   default_timeout_seconds: 300
-  max_concurrent_tools: 3
+  max_concurrent_tools: 3  # Reduced for 3-tool architecture
   enable_caching: true
   cache_ttl_seconds: 3600
-  ssp_primary: true
+  ssp_primary: true  # All operations via SSP APIs
   
   categories:
     ssp_operations:
@@ -290,3 +290,291 @@ error_handling:
   error_reporting: true
   user_friendly_messages: true
   ssp_specific_errors: true
+      properties:
+        database_names:
+          type: "array"
+          items:
+            type: "string"
+          description: "Specific databases to analyze"
+        analysis_type:
+          type: "string"
+          enum: ["quick", "comprehensive", "predictive", "comparative"]
+          default: "comprehensive"
+        time_range:
+          type: "object"
+          properties:
+            start_time:
+              type: "string"
+              format: "date-time"
+            end_time:
+              type: "string"
+              format: "date-time"
+            period:
+              type: "string"
+              enum: ["1h", "24h", "7d", "30d", "90d"]
+              default: "24h"
+        metrics:
+          type: "array"
+          items:
+            type: "string"
+            enum: ["cpu", "memory", "disk_io", "query_performance", "connections", "locks"]
+          default: ["cpu", "memory", "query_performance"]
+        ai_recommendations:
+          type: "boolean"
+          description: "Generate AI-powered optimization recommendations"
+          default: true
+        include_portal_data:
+          type: "boolean"
+          description: "Include data from integrated portals"
+          default: true
+      required: ["database_names"]
+    examples:
+      - input:
+          database_names: ["production_users", "production_orders"]
+          analysis_type: "predictive"
+          time_range:
+            period: "7d"
+          ai_recommendations: true
+
+  manage_portal_integration:
+    name: "manage_portal_integration"
+    description: "Manage integration with external self-service portals including discovery, registration, and health monitoring"
+    category: "portal_management"
+    requires_confirmation: false
+    implementation_class: "EnhancedMCPTools"
+    implementation_method: "manage_portal_integration"
+    input_schema:
+      type: "object"
+      properties:
+        action:
+          type: "string"
+          enum: ["list", "register", "unregister", "health_check", "discover_capabilities", "sync"]
+          description: "Portal management action to perform"
+        portal_id:
+          type: "string"
+          description: "Portal identifier (required for specific portal actions)"
+        portal_config:
+          type: "object"
+          description: "Portal configuration for registration"
+          properties:
+            name:
+              type: "string"
+            base_url:
+              type: "string"
+            authentication:
+              type: "object"
+            capabilities:
+              type: "array"
+              items:
+                type: "string"
+            endpoints:
+              type: "object"
+        discovery_options:
+          type: "object"
+          properties:
+            auto_generate_intents:
+              type: "boolean"
+              default: true
+            create_workflow_steps:
+              type: "boolean"
+              default: true
+            natural_language_patterns:
+              type: "boolean"
+              default: true
+      required: ["action"]
+    examples:
+      - input:
+          action: "health_check"
+          portal_id: "analytics_portal"
+        description: "Check health status of analytics portal"
+      - input:
+          action: "discover_capabilities"
+          portal_id: "infrastructure_portal"
+          discovery_options:
+            auto_generate_intents: true
+
+  get_compliance_report:
+    name: "get_compliance_report"
+    description: "Generate comprehensive compliance reports across all integrated portals with AI-powered analysis"
+    category: "compliance_reporting"
+    requires_confirmation: false
+    implementation_class: "EnhancedMCPTools"
+    implementation_method: "get_compliance_report"
+    input_schema:
+      type: "object"
+      properties:
+        compliance_frameworks:
+          type: "array"
+          items:
+            type: "string"
+            enum: ["SOX", "GDPR", "HIPAA", "PCI_DSS", "SOC2", "ISO27001"]
+          description: "Compliance frameworks to include in report"
+        scope:
+          type: "object"
+          properties:
+            portals:
+              type: "array"
+              items:
+                type: "string"
+            databases:
+              type: "array"
+              items:
+                type: "string"
+            environments:
+              type: "array"
+              items:
+                type: "string"
+                enum: ["development", "staging", "production"]
+        report_format:
+          type: "string"
+          enum: ["json", "pdf", "html", "excel"]
+          default: "json"
+        include_remediation:
+          type: "boolean"
+          description: "Include AI-generated remediation recommendations"
+          default: true
+        ai_risk_assessment:
+          type: "boolean"
+          description: "Include AI-powered risk assessment"
+          default: true
+      required: ["compliance_frameworks"]
+    examples:
+      - input:
+          compliance_frameworks: ["GDPR", "SOX"]
+          scope:
+            environments: ["production"]
+          include_remediation: true
+
+  orchestrate_conversation_flow:
+    name: "orchestrate_conversation_flow"
+    description: "Manage conversational context and multi-turn interactions using LangGraph state management"
+    category: "conversation_management"
+    requires_confirmation: false
+    implementation_class: "EnhancedMCPTools"
+    implementation_method: "orchestrate_conversation_flow"
+    input_schema:
+      type: "object"
+      properties:
+        session_id:
+          type: "string"
+          description: "Conversation session identifier"
+        conversation_action:
+          type: "string"
+          enum: ["start", "continue", "clarify", "confirm", "cancel", "summarize"]
+          description: "Type of conversation action"
+        user_message:
+          type: "string"
+          description: "User's message or response"
+        context_data:
+          type: "object"
+          description: "Additional context for conversation"
+          properties:
+            previous_intent:
+              type: "string"
+            pending_operations:
+              type: "array"
+              items:
+                type: "object"
+            conversation_history:
+              type: "array"
+              items:
+                type: "object"
+        response_options:
+          type: "object"
+          properties:
+            include_suggestions:
+              type: "boolean"
+              default: true
+            max_suggestions:
+              type: "integer"
+              default: 3
+            confidence_threshold:
+              type: "number"
+              default: 0.7
+      required: ["session_id", "conversation_action"]
+    examples:
+      - input:
+          session_id: "user_123_session"
+          conversation_action: "continue"
+          user_message: "Yes, proceed with the backup"
+          context_data:
+            previous_intent: "create_backup"
+
+# =============================================================================
+# TOOL CONFIGURATION SETTINGS
+# =============================================================================
+
+tool_settings:
+  default_timeout_seconds: 300
+  max_concurrent_tools: 10
+  enable_caching: true
+  cache_ttl_seconds: 3600
+  
+  categories:
+    nlp_processing:
+      description: "Natural language processing and intent classification"
+      color: "#4CAF50"
+      icon: "🧠"
+    workflow_orchestration:
+      description: "Multi-step workflow execution and orchestration"
+      color: "#2196F3" 
+      icon: "🔄"
+    inventory_management:
+      description: "Database and resource inventory management"
+      color: "#FF9800"
+      icon: "📊"
+    safety_validation:
+      description: "Safety checks and operation validation"
+      color: "#F44336"
+      icon: "🛡️"
+    performance_analysis:
+      description: "Performance monitoring and optimization"
+      color: "#9C27B0"
+      icon: "⚡"
+    portal_management:
+      description: "External portal integration and management"
+      color: "#00BCD4"
+      icon: "🔌"
+    compliance_reporting:
+      description: "Compliance monitoring and reporting"
+      color: "#795548"
+      icon: "📋"
+    conversation_management:
+      description: "Conversational context and flow management"
+      color: "#607D8B"
+      icon: "💬"
+
+  validation:
+    required_fields_validation: true
+    schema_validation: true
+    type_checking: true
+    custom_validators: []
+
+  monitoring:
+    track_usage: true
+    log_performance: true
+    alert_on_errors: true
+    metrics_collection: true
+
+# =============================================================================
+# INTEGRATION CONFIGURATION
+# =============================================================================
+
+integration:
+  langchain_tools: true
+  langgraph_workflows: true
+  gemini_llm: true
+  portal_manager: true
+  intent_classifier: true
+  conversation_flow: true
+
+# =============================================================================
+# ERROR HANDLING
+# =============================================================================
+
+error_handling:
+  retry_attempts: 3
+  retry_delay_seconds: 5
+  fallback_behavior: "graceful_degradation"
+  error_reporting: true
+  user_friendly_messages: true

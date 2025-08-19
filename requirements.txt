@@ -12,6 +12,10 @@ langchain-community>=0.0.20
 google-generativeai>=0.3.0
 langchain-google-genai>=0.0.8
 
+# Web Interface
+gradio>=5.0.0
+plotly>=5.0.0
+
 # Database Connectivity
 asyncpg>=0.29.0          # PostgreSQL async driver
 aiomysql>=0.2.0          # MySQL async driver  

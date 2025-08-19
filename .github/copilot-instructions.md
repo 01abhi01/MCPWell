@@ -7,6 +7,8 @@
 
 - [x] Customize the Project ✅ Converted entire codebase to YAML-based configuration in single mcp_tools.yaml file
 	
+- [x] Simplified Architecture ✅ Reduced to 3 core SSP tools - all operations via SSP API endpoints only
+
 - [ ] Install Required Extensions
 
 - [x] Compile the Project ✅ Minimal dependencies installed, simplified Python loader created
@@ -15,4 +17,19 @@
 
 - [ ] Launch the Project
 
-- [x] Ensure Documentation is Complete ✅ Updated README.md for YAML-first architecture
+- [x] Ensure Documentation is Complete ✅ Updated README.md for SSP-first 3-tool architecture
+
+## SSP-First Architecture Notes
+
+This project now uses a simplified 3-tool architecture where ALL operations flow through SSP API endpoints:
+
+1. **ssp_portal_interaction** - Primary tool for all SSP API operations including natural language processing
+2. **inventory_metadata_interaction** - Database and resource inventory management via SSP APIs only  
+3. **unified_response** - Consolidated response aggregation with AI-powered insights
+
+Key principles:
+- Every database operation uses SSP API endpoints exclusively
+- No direct database connections or alternate portal interfaces
+- All tools are defined in tools_config.yaml with SSP-specific configurations
+- AI capabilities (Gemini LLM) enhance SSP operations but don't bypass them
+- Session management tracks SSP operation history for unified responses

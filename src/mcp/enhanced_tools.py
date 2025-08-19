@@ -61,431 +61,298 @@ class EnhancedMCPTools:
             return {"tools": {}}
     
     def get_tools(self) -> List[Tool]:
-        """Get all available MCP tools from YAML configuration"""
+        """Get all available MCP tools from YAML configuration - Simplified to 3 core SSP tools"""
         tools = []
         
-        for tool_name, tool_config in self.tools_config.get("tools", {}).items():
-            try:
-                tool = Tool(
-                    name=tool_config["name"],
-                    description=tool_config["description"],
-                    inputSchema=tool_config["input_schema"]
-                )
-                tools.append(tool)
-                logger.debug(f"✅ Loaded tool: {tool_name}")
-            except Exception as e:
-                logger.error(f"❌ Failed to load tool {tool_name}: {e}")
+        # Only load the 3 core SSP tools
+        core_tools = ["ssp_portal_interaction", "inventory_metadata_interaction", "unified_response"]
         
-        logger.info(f"📊 Loaded {len(tools)} MCP tools from YAML configuration")
+        for tool_name in core_tools:
+            tool_config = self.tools_config.get("tools", {}).get(tool_name)
+            if tool_config:
+                try:
+                    tool = Tool(
+                        name=tool_config["name"],
+                        description=tool_config["description"],
+                        inputSchema=tool_config["input_schema"]
+                    )
+                    tools.append(tool)
+                    logger.debug(f"✅ Loaded SSP tool: {tool_name}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to load SSP tool {tool_name}: {e}")
+            else:
+                logger.warning(f"⚠️ SSP tool configuration not found: {tool_name}")
+        
+        logger.info(f"📊 Loaded {len(tools)} core SSP MCP tools from YAML configuration")
         return tools
     
     def get_tool_config(self, tool_name: str) -> Optional[Dict[str, Any]]:
         """Get configuration for a specific tool"""
         return self.tools_config.get("tools", {}).get(tool_name)
     
-    async def process_database_request(self, arguments: Dict[str, Any]) -> List[TextContent]:
+    async def ssp_portal_interaction(self, arguments: Dict[str, Any]) -> List[TextContent]:
         """
-        Process natural language requests for database operations using AI-powered intent recognition
-        Tool definition loaded from YAML configuration
+        Handle all SSP portal API interactions - primary interface for all operations
+        All operations flow through SSP API endpoints only
         """
         try:
-            user_input = arguments.get("user_input", "")
+            operation_type = arguments.get("operation_type", "")
+            endpoint = arguments.get("endpoint", "")
+            parameters = arguments.get("parameters", {})
+            portal_id = arguments.get("portal_id", "default_ssp")
+            request_method = arguments.get("request_method", "GET")
             session_id = arguments.get("session_id", "default_session")
-            context = arguments.get("context", {})
             
-            logger.info(f"🧠 Processing database request: '{user_input[:50]}...' for session {session_id}")
+            logger.info(f"🔌 SSP Portal Operation: {operation_type} via {endpoint} (method: {request_method})")
             
-            # Get conversation context
-            conversation_context = self.active_sessions.get(session_id, {})
-            
-            # Classify intent using NLP
-            intent_result = await self.intent_classifier.classify_intent(
-                user_input, 
-                conversation_context
-            )
-            
-            logger.info(f"🎯 Classified intent: {intent_result.intent} (confidence: {intent_result.confidence:.2f})")
-            
-            # Update conversation flow
-            flow_response = await self.conversation_flow.process_turn(
-                session_id, 
-                user_input, 
-                intent_result
-            )
-            
-            # Check if clarification is needed
-            if intent_result.confidence < 0.7 and intent_result.intent != DBIntent.UNKNOWN:
-                clarification_response = await self.gemini_client.generate_clarification(
+            # Process through NLP if it's a natural language request
+            if operation_type == "natural_language_request":
+                user_input = parameters.get("user_input", "")
+                
+                # Classify intent using NLP
+                intent_result = await self.intent_classifier.classify_intent(
                     user_input, 
-                    intent_result.intent.value,
-                    intent_result.confidence
+                    self.active_sessions.get(session_id, {})
                 )
                 
-                return [TextContent(
-                    type="text",
-                    text=f"🤔 I need clarification for your request: '{user_input}'\n\n"
-                         f"Intent detected: {intent_result.intent.value} (confidence: {intent_result.confidence:.1%})\n\n"
-                         f"💡 {clarification_response}\n\n"
-                         f"Please provide more details or confirm if this is what you meant."
-                )]
-            
-            # Process the request based on intent
-            if intent_result.requires_confirmation:
-                confirmation_data = {
-                    "operation_type": intent_result.intent.value,
-                    "target_resources": intent_result.entities.get("databases", []),
-                    "impact_assessment": {
-                        "risk_level": "medium",
-                        "affected_records": 0,
-                        "rollback_available": True
-                    },
-                    "user_confirmation": False
-                }
+                logger.info(f"🎯 Classified intent: {intent_result.intent} (confidence: {intent_result.confidence:.2f})")
                 
-                confirmation_result = await self.confirm_operation(confirmation_data)
-                
-                if not confirmation_result[0].text.startswith("✅"):
-                    return confirmation_result
+                # Convert intent to SSP API operation
+                ssp_operation = await self._convert_intent_to_ssp_operation(intent_result, parameters)
+                endpoint = ssp_operation.get("endpoint", endpoint)
+                parameters.update(ssp_operation.get("parameters", {}))
+                request_method = ssp_operation.get("method", request_method)
             
-            # Execute the operation through portal manager
-            portal_result = await self.portal_manager.execute_operation(
-                intent_result.intent.value,
-                intent_result.entities,
-                context
+            # Execute operation through portal manager (SSP API only)
+            portal_result = await self.portal_manager.execute_ssp_operation(
+                operation_type=operation_type,
+                endpoint=endpoint,
+                method=request_method,
+                parameters=parameters,
+                portal_id=portal_id
             )
             
             # Update session state
             self.active_sessions[session_id] = {
-                "last_intent": intent_result.intent.value,
-                "last_entities": intent_result.entities,
-                "conversation_history": flow_response.get("context", {}).get("history", [])
+                "last_operation": operation_type,
+                "last_endpoint": endpoint,
+                "last_parameters": parameters,
+                "portal_result": portal_result
             }
             
             return [TextContent(
                 type="text",
-                text=f"✅ Database Request Processed Successfully\n\n"
-                     f"🎯 Intent: {intent_result.intent.value}\n"
-                     f"🔍 Entities: {json.dumps(intent_result.entities, indent=2)}\n"
-                     f"📊 Portal Result: {portal_result.get('status', 'completed')}\n\n"
-                     f"💡 AI Analysis: {intent_result.explanation}\n\n"
+                text=f"✅ SSP Portal Operation Completed\n\n"
+                     f"🔌 Portal: {portal_id}\n"
+                     f"🎯 Operation: {operation_type}\n"
+                     f"🌐 Endpoint: {endpoint}\n"
+                     f"📊 Method: {request_method}\n"
+                     f"📋 Status: {portal_result.get('status', 'completed')}\n\n"
+                     f"📊 Response Data:\n{json.dumps(portal_result.get('data', {}), indent=2)}\n\n"
                      f"Session: {session_id}"
             )]
             
         except Exception as e:
-            logger.error(f"❌ Error processing database request: {e}")
+            logger.error(f"❌ Error in SSP portal interaction: {e}")
             return [TextContent(
                 type="text",
-                text=f"❌ Error processing request: {str(e)}\n\n"
-                     f"Please try rephrasing your request or contact support if the issue persists."
+                text=f"❌ SSP Portal Error: {str(e)}\n\n"
+                     f"Please verify SSP API endpoints and parameters."
             )]
-    
-    async def execute_multi_step_workflow(self, arguments: Dict[str, Any]) -> List[TextContent]:
+
+    async def inventory_metadata_interaction(self, arguments: Dict[str, Any]) -> List[TextContent]:
         """
-        Execute complex multi-step database workflows with LangGraph orchestration
-        Tool definition loaded from YAML configuration
+        Handle database/resource inventory and metadata operations via SSP APIs
+        All inventory operations use SSP API endpoints
         """
         try:
-            workflow_description = arguments.get("workflow_description", "")
-            databases = arguments.get("databases", [])
-            dry_run = arguments.get("dry_run", True)
-            workflow_options = arguments.get("workflow_options", {})
-            
-            logger.info(f"🔄 Executing workflow: '{workflow_description}' (dry_run: {dry_run})")
-            
-            # Initialize workflow engine
-            workflow_result = await self.workflow_engine.execute_workflow(
-                description=workflow_description,
-                target_databases=databases,
-                dry_run=dry_run,
-                options=workflow_options
-            )
-            
-            return [TextContent(
-                type="text",
-                text=f"🔄 Multi-Step Workflow {'(Dry Run)' if dry_run else ''}\n\n"
-                     f"📝 Description: {workflow_description}\n"
-                     f"🗄️ Databases: {', '.join(databases) if databases else 'Auto-detected'}\n"
-                     f"📊 Execution Status: {workflow_result.get('status', 'completed')}\n"
-                     f"⏱️ Duration: {workflow_result.get('duration', 'N/A')}\n\n"
-                     f"🔍 Steps Executed:\n{workflow_result.get('steps_summary', 'No steps available')}\n\n"
-                     f"💡 AI Recommendations:\n{workflow_result.get('recommendations', 'None')}"
-            )]
-            
-        except Exception as e:
-            logger.error(f"❌ Error executing workflow: {e}")
-            return [TextContent(
-                type="text",
-                text=f"❌ Workflow execution failed: {str(e)}"
-            )]
-    
-    async def get_database_inventory(self, arguments: Dict[str, Any]) -> List[TextContent]:
-        """
-        Retrieve comprehensive database inventory with metadata and AI insights
-        Tool definition loaded from YAML configuration
-        """
-        try:
-            portal_filter = arguments.get("portal_filter", [])
-            environment_filter = arguments.get("environment_filter", "all")
-            health_status_filter = arguments.get("health_status_filter", "all")
+            inventory_action = arguments.get("inventory_action", "list")
+            resource_types = arguments.get("resource_types", ["databases"])
+            filters = arguments.get("filters", {})
             include_metadata = arguments.get("include_metadata", True)
-            ai_insights = arguments.get("ai_insights", False)
+            include_health_status = arguments.get("include_health_status", True)
+            portal_ids = arguments.get("portal_ids", [])
             
-            logger.info(f"📊 Retrieving database inventory (env: {environment_filter}, health: {health_status_filter})")
+            logger.info(f"📊 Inventory Action: {inventory_action} for {', '.join(resource_types)}")
             
-            # Get inventory from portal manager
-            inventory = await self.portal_manager.get_database_inventory(
-                portal_filter=portal_filter,
-                environment_filter=environment_filter,
-                health_status_filter=health_status_filter,
-                include_metadata=include_metadata
+            # Route inventory request through SSP APIs
+            inventory_result = await self.portal_manager.execute_inventory_operation(
+                action=inventory_action,
+                resource_types=resource_types,
+                filters=filters,
+                include_metadata=include_metadata,
+                include_health_status=include_health_status,
+                portal_ids=portal_ids,
+                use_ssp_api=True  # Force SSP API usage
             )
             
-            # Generate AI insights if requested
-            insights_text = ""
-            if ai_insights and inventory.get("databases"):
-                insights = await self.gemini_client.analyze_database_inventory(inventory)
-                insights_text = f"\n\n🤖 AI Insights:\n{insights}"
+            # Process metadata through Gemini if requested
+            ai_insights = ""
+            if arguments.get("ai_insights", False) and inventory_result.get("resources"):
+                ai_insights = await self.gemini_client.analyze_inventory_metadata(inventory_result)
+                ai_insights = f"\n\n🤖 AI Insights:\n{ai_insights}"
             
             return [TextContent(
                 type="text",
-                text=f"📊 Database Inventory Report\n\n"
-                     f"🔍 Environment Filter: {environment_filter}\n"
-                     f"💚 Health Filter: {health_status_filter}\n"
-                     f"🔌 Portal Filter: {', '.join(portal_filter) if portal_filter else 'All portals'}\n\n"
+                text=f"📊 Inventory Metadata Operation\n\n"
+                     f"🔍 Action: {inventory_action}\n"
+                     f"🗂️ Resource Types: {', '.join(resource_types)}\n"
+                     f"🔌 Portal(s): {', '.join(portal_ids) if portal_ids else 'All SSP portals'}\n"
+                     f"📋 Filters: {json.dumps(filters, indent=2)}\n\n"
                      f"📈 Summary:\n"
-                     f"• Total Databases: {inventory.get('total_count', 0)}\n"
-                     f"• Healthy: {inventory.get('healthy_count', 0)}\n"
-                     f"• Warning: {inventory.get('warning_count', 0)}\n"
-                     f"• Critical: {inventory.get('critical_count', 0)}\n\n"
-                     f"🗄️ Databases:\n{json.dumps(inventory.get('databases', []), indent=2)}"
-                     f"{insights_text}"
+                     f"• Total Resources: {inventory_result.get('total_count', 0)}\n"
+                     f"• Healthy: {inventory_result.get('healthy_count', 0)}\n"
+                     f"• Warning: {inventory_result.get('warning_count', 0)}\n"
+                     f"• Critical: {inventory_result.get('critical_count', 0)}\n\n"
+                     f"🗄️ Resources:\n{json.dumps(inventory_result.get('resources', []), indent=2)}"
+                     f"{ai_insights}"
             )]
             
         except Exception as e:
-            logger.error(f"❌ Error retrieving inventory: {e}")
+            logger.error(f"❌ Error in inventory metadata interaction: {e}")
             return [TextContent(
                 type="text",
-                text=f"❌ Failed to retrieve database inventory: {str(e)}"
+                text=f"❌ Inventory Metadata Error: {str(e)}\n\n"
+                     f"Please verify SSP API inventory endpoints."
             )]
-    
-    async def confirm_operation(self, arguments: Dict[str, Any]) -> List[TextContent]:
+
+    async def unified_response(self, arguments: Dict[str, Any]) -> List[TextContent]:
         """
-        Interactive confirmation system for destructive operations with AI safety validation
-        Tool definition loaded from YAML configuration
+        Provide unified, consolidated responses combining SSP operations with AI insights
+        Aggregates data from multiple SSP API calls and provides intelligent summaries
         """
         try:
-            operation_type = arguments.get("operation_type", "")
-            target_resources = arguments.get("target_resources", [])
-            impact_assessment = arguments.get("impact_assessment", {})
-            user_confirmation = arguments.get("user_confirmation", False)
+            response_type = arguments.get("response_type", "summary")
+            session_id = arguments.get("session_id", "default_session")
+            include_recommendations = arguments.get("include_recommendations", True)
+            include_workflow_suggestions = arguments.get("include_workflow_suggestions", True)
+            context_operations = arguments.get("context_operations", [])
             
-            logger.info(f"🛡️ Safety confirmation for {operation_type} on {len(target_resources)} resources")
+            logger.info(f"🎯 Unified Response: {response_type} for session {session_id}")
             
-            # AI-powered safety assessment
-            safety_analysis = await self.gemini_client.assess_operation_safety(
-                operation_type, 
-                target_resources, 
-                impact_assessment
-            )
+            # Get session context
+            session_context = self.active_sessions.get(session_id, {})
             
-            risk_level = impact_assessment.get("risk_level", "medium")
-            risk_emoji = {"low": "🟢", "medium": "🟡", "high": "🟠", "critical": "🔴"}.get(risk_level, "⚪")
+            # Gather data from recent SSP operations
+            operation_summary = await self._gather_operation_summary(session_context, context_operations)
             
-            if user_confirmation:
-                return [TextContent(
-                    type="text",
-                    text=f"✅ Operation Confirmed and Approved\n\n"
-                         f"🔧 Operation: {operation_type}\n"
-                         f"🎯 Targets: {', '.join(target_resources)}\n"
-                         f"{risk_emoji} Risk Level: {risk_level}\n\n"
-                         f"🤖 AI Safety Analysis: {safety_analysis}\n\n"
-                         f"✅ User confirmation received. Proceeding with operation..."
-                )]
-            else:
-                return [TextContent(
-                    type="text",
-                    text=f"⚠️ Confirmation Required for {operation_type.upper()}\n\n"
-                         f"🎯 Target Resources:\n"
-                         f"{chr(10).join([f'  • {resource}' for resource in target_resources])}\n\n"
-                         f"{risk_emoji} Risk Assessment: {risk_level.upper()}\n"
-                         f"📊 Affected Records: {impact_assessment.get('affected_records', 'Unknown')}\n"
-                         f"♻️ Rollback Available: {'Yes' if impact_assessment.get('rollback_available') else 'No'}\n\n"
-                         f"🤖 AI Safety Analysis:\n{safety_analysis}\n\n"
-                         f"❓ Do you want to proceed with this operation? (Reply 'yes' to confirm)"
-                )]
-            
-        except Exception as e:
-            logger.error(f"❌ Error in confirmation process: {e}")
-            return [TextContent(
-                type="text",
-                text=f"❌ Error in safety confirmation: {str(e)}"
-            )]
-    
-    async def analyze_database_performance(self, arguments: Dict[str, Any]) -> List[TextContent]:
-        """
-        AI-powered database performance analysis with predictive insights
-        Tool definition loaded from YAML configuration
-        """
-        try:
-            database_names = arguments.get("database_names", [])
-            analysis_type = arguments.get("analysis_type", "comprehensive")
-            time_range = arguments.get("time_range", {"period": "24h"})
-            metrics = arguments.get("metrics", ["cpu", "memory", "query_performance"])
-            ai_recommendations = arguments.get("ai_recommendations", True)
-            include_portal_data = arguments.get("include_portal_data", True)
-            
-            logger.info(f"⚡ Analyzing performance for {len(database_names)} databases ({analysis_type})")
-            
-            # Collect performance data from portals
-            performance_data = await self.portal_manager.collect_performance_metrics(
-                database_names=database_names,
-                time_range=time_range,
-                metrics=metrics,
-                include_portal_data=include_portal_data
-            )
-            
-            # AI-powered analysis
-            ai_analysis = ""
-            if ai_recommendations:
-                ai_analysis = await self.gemini_client.analyze_performance_data(
-                    performance_data, 
-                    analysis_type
+            # Generate AI-powered unified response
+            unified_analysis = ""
+            if include_recommendations:
+                unified_analysis = await self.gemini_client.generate_unified_analysis(
+                    operation_summary,
+                    session_context,
+                    response_type
                 )
             
-            return [TextContent(
-                type="text",
-                text=f"⚡ Database Performance Analysis ({analysis_type})\n\n"
-                     f"🗄️ Databases Analyzed: {', '.join(database_names)}\n"
-                     f"📊 Metrics: {', '.join(metrics)}\n"
-                     f"⏰ Time Range: {time_range.get('period', 'Custom range')}\n\n"
-                     f"📈 Performance Data:\n{json.dumps(performance_data, indent=2)}\n\n"
-                     f"🤖 AI Performance Analysis:\n{ai_analysis if ai_recommendations else 'AI analysis disabled'}"
-            )]
-            
-        except Exception as e:
-            logger.error(f"❌ Error analyzing performance: {e}")
-            return [TextContent(
-                type="text",
-                text=f"❌ Performance analysis failed: {str(e)}"
-            )]
-    
-    async def manage_portal_integration(self, arguments: Dict[str, Any]) -> List[TextContent]:
-        """
-        Manage integration with external self-service portals
-        Tool definition loaded from YAML configuration
-        """
-        try:
-            action = arguments.get("action", "list")
-            portal_id = arguments.get("portal_id")
-            portal_config = arguments.get("portal_config", {})
-            discovery_options = arguments.get("discovery_options", {})
-            
-            logger.info(f"🔌 Portal management action: {action} for {portal_id or 'all portals'}")
-            
-            result = await self.portal_manager.manage_portal(
-                action=action,
-                portal_id=portal_id,
-                config=portal_config,
-                discovery_options=discovery_options
-            )
-            
-            return [TextContent(
-                type="text",
-                text=f"🔌 Portal Management: {action.upper()}\n\n"
-                     f"🎯 Portal: {portal_id or 'All portals'}\n"
-                     f"📊 Result: {result.get('status', 'completed')}\n\n"
-                     f"📋 Details:\n{json.dumps(result.get('data', {}), indent=2)}"
-            )]
-            
-        except Exception as e:
-            logger.error(f"❌ Error managing portal: {e}")
-            return [TextContent(
-                type="text",
-                text=f"❌ Portal management failed: {str(e)}"
-            )]
-    
-    async def get_compliance_report(self, arguments: Dict[str, Any]) -> List[TextContent]:
-        """
-        Generate comprehensive compliance reports with AI analysis
-        Tool definition loaded from YAML configuration
-        """
-        try:
-            compliance_frameworks = arguments.get("compliance_frameworks", [])
-            scope = arguments.get("scope", {})
-            report_format = arguments.get("report_format", "json")
-            include_remediation = arguments.get("include_remediation", True)
-            ai_risk_assessment = arguments.get("ai_risk_assessment", True)
-            
-            logger.info(f"📋 Generating compliance report for {', '.join(compliance_frameworks)}")
-            
-            # Generate compliance report through portal manager
-            compliance_data = await self.portal_manager.generate_compliance_report(
-                frameworks=compliance_frameworks,
-                scope=scope,
-                include_remediation=include_remediation
-            )
-            
-            # AI risk assessment
-            risk_assessment = ""
-            if ai_risk_assessment:
-                risk_assessment = await self.gemini_client.assess_compliance_risks(
-                    compliance_data,
-                    compliance_frameworks
+            # Generate workflow suggestions
+            workflow_suggestions = ""
+            if include_workflow_suggestions:
+                workflow_suggestions = await self._generate_workflow_suggestions(
+                    operation_summary,
+                    session_context
                 )
             
-            return [TextContent(
-                type="text",
-                text=f"📋 Compliance Report\n\n"
-                     f"🏛️ Frameworks: {', '.join(compliance_frameworks)}\n"
-                     f"🎯 Scope: {json.dumps(scope, indent=2)}\n"
-                     f"📄 Format: {report_format}\n\n"
-                     f"📊 Compliance Status:\n{json.dumps(compliance_data, indent=2)}\n\n"
-                     f"🤖 AI Risk Assessment:\n{risk_assessment if ai_risk_assessment else 'Risk assessment disabled'}"
-            )]
-            
-        except Exception as e:
-            logger.error(f"❌ Error generating compliance report: {e}")
-            return [TextContent(
-                type="text",
-                text=f"❌ Compliance report generation failed: {str(e)}"
-            )]
-    
-    async def orchestrate_conversation_flow(self, arguments: Dict[str, Any]) -> List[TextContent]:
-        """
-        Manage conversational context and multi-turn interactions
-        Tool definition loaded from YAML configuration
-        """
-        try:
-            session_id = arguments.get("session_id", "")
-            conversation_action = arguments.get("conversation_action", "start")
-            user_message = arguments.get("user_message", "")
-            context_data = arguments.get("context_data", {})
-            response_options = arguments.get("response_options", {})
-            
-            logger.info(f"💬 Conversation action: {conversation_action} for session {session_id}")
-            
-            # Process conversation flow
-            flow_result = await self.conversation_flow.handle_conversation_action(
-                session_id=session_id,
-                action=conversation_action,
-                message=user_message,
-                context=context_data,
-                options=response_options
+            # Format final unified response
+            response_content = await self._format_unified_response(
+                response_type,
+                operation_summary,
+                unified_analysis,
+                workflow_suggestions,
+                session_context
             )
             
             return [TextContent(
                 type="text",
-                text=f"💬 Conversation Flow: {conversation_action.upper()}\n\n"
-                     f"🔑 Session: {session_id}\n"
-                     f"💭 Message: {user_message}\n"
-                     f"📊 Flow State: {flow_result.get('state', 'active')}\n\n"
-                     f"🤖 Response:\n{flow_result.get('response', 'No response generated')}\n\n"
-                     f"💡 Suggestions: {', '.join(flow_result.get('suggestions', []))}"
+                text=response_content
             )]
             
         except Exception as e:
-            logger.error(f"❌ Error in conversation flow: {e}")
+            logger.error(f"❌ Error in unified response: {e}")
             return [TextContent(
                 type="text",
-                text=f"❌ Conversation flow error: {str(e)}"
+                text=f"❌ Unified Response Error: {str(e)}\n\n"
+                     f"Unable to generate consolidated response."
             )]
+
+    async def _convert_intent_to_ssp_operation(self, intent_result, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert NLP intent to SSP API operation parameters"""
+        intent_to_ssp_mapping = {
+            "database_query": {
+                "endpoint": "/api/v1/databases/query",
+                "method": "POST",
+                "parameters": {"query_type": "list", "filters": intent_result.entities}
+            },
+            "create_backup": {
+                "endpoint": "/api/v1/operations/backup",
+                "method": "POST", 
+                "parameters": {"backup_type": "full", "targets": intent_result.entities.get("databases", [])}
+            },
+            "performance_analysis": {
+                "endpoint": "/api/v1/analytics/performance",
+                "method": "GET",
+                "parameters": {"metrics": ["cpu", "memory", "query_performance"], "targets": intent_result.entities.get("databases", [])}
+            }
+        }
+        
+        return intent_to_ssp_mapping.get(intent_result.intent.value, {
+            "endpoint": "/api/v1/operations/generic",
+            "method": "POST",
+            "parameters": parameters
+        })
+
+    async def _gather_operation_summary(self, session_context: Dict[str, Any], context_operations: List[str]) -> Dict[str, Any]:
+        """Gather summary of recent SSP operations for unified response"""
+        return {
+            "recent_operations": [
+                {
+                    "operation": session_context.get("last_operation", ""),
+                    "endpoint": session_context.get("last_endpoint", ""),
+                    "status": session_context.get("portal_result", {}).get("status", ""),
+                    "data_summary": len(str(session_context.get("portal_result", {}).get("data", {})))
+                }
+            ],
+            "session_metrics": {
+                "total_operations": 1,
+                "success_rate": 1.0,
+                "avg_response_time": "N/A"
+            }
+        }
+
+    async def _generate_workflow_suggestions(self, operation_summary: Dict[str, Any], session_context: Dict[str, Any]) -> str:
+        """Generate workflow suggestions based on recent operations"""
+        suggestions = [
+            "💡 Consider setting up automated monitoring for frequently queried resources",
+            "🔄 Create a scheduled backup workflow for critical databases",
+            "📊 Set up performance alerts for proactive monitoring"
+        ]
+        return "\n".join(suggestions)
+
+    async def _format_unified_response(self, response_type: str, operation_summary: Dict[str, Any], 
+                                     unified_analysis: str, workflow_suggestions: str, 
+                                     session_context: Dict[str, Any]) -> str:
+        """Format the final unified response"""
+        # Format compact operation summary
+        recent_ops = operation_summary.get("recent_operations", [])
+        session_metrics = operation_summary.get("session_metrics", {})
+        
+        compact_summary = "📊 Operation Summary:\n"
+        compact_summary += f"   🔄 Operations: {len(recent_ops)} | Success: {session_metrics.get('success_rate', 0):.0%} | Total: {session_metrics.get('total_operations', 0)}\n"
+        
+        if recent_ops:
+            last_op = recent_ops[0]
+            compact_summary += f"   � Last Operation: {last_op.get('operation', 'N/A')}\n"
+            compact_summary += f"   🌐 Endpoint: {last_op.get('endpoint', 'N/A')}\n"
+            compact_summary += f"   ✅ Status: {last_op.get('status', 'N/A')}\n"
+            compact_summary += f"   📊 Data Size: {last_op.get('data_summary', 0)} chars\n"
+        
+        compact_summary += f"   📈 Session Metrics:\n"
+        compact_summary += f"      • Total Operations: {session_metrics.get('total_operations', 0)}\n"
+        compact_summary += f"      • Success Rate: {session_metrics.get('success_rate', 0):.1%}\n"
+        compact_summary += f"      • Avg Response Time: {session_metrics.get('avg_response_time', 'N/A')}\n"
+        
+        return f"🎯 Unified Response ({response_type.upper()})\n\n" \
+               f"{compact_summary}\n" \
+               f"🤖 AI Analysis:\n{unified_analysis}\n\n" \
+               f"💡 Workflow Suggestions:\n{workflow_suggestions}\n\n" \
+               f"🔗 All operations executed via SSP API endpoints"

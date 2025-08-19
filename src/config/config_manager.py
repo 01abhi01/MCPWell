@@ -82,6 +82,20 @@ class ConfigManager:
         """Get security configuration"""
         return self.config.get("security", {})
     
+    def get_config(self, key: str = None, default: Any = None) -> Any:
+        """Get configuration by key or all configuration"""
+        if key:
+            # Handle nested keys like "ssp.api_token"
+            keys = key.split('.')
+            value = self.config
+            try:
+                for k in keys:
+                    value = value[k]
+                return value
+            except (KeyError, TypeError):
+                return default if default is not None else {}
+        return self.config
+    
     def get_tools_config(self) -> Dict[str, Any]:
         """Get tools configuration from YAML"""
         return self.tools_config
